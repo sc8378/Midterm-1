@@ -7,9 +7,9 @@ import seaborn as sns
 from pathlib import Path
 from sklearn.linear_model import LinearRegression
 
-# -----------------------------
+
 # Page setup
-# -----------------------------
+
 st.set_page_config(
     page_title="Student Exam Success Dashboard",
     page_icon="🎓",
@@ -18,68 +18,24 @@ st.set_page_config(
 
 sns.set_theme(style="whitegrid")
 
-# -----------------------------
-# Helper functions
-# -----------------------------
+# Load Data
+
 @st.cache_data
 def load_data():
-    """
-    Loads the student dataset.
-    The code checks a few common file names so it works more easily on Streamlit Cloud.
-    """
-    possible_files = [
-        "student_dataset_10000_rows(1).csv",
-        "student_dataset_10000_rows.csv",
-        "student_dataset.csv"
-    ]
+    return pd.read_csv("student_dataset_10000_rows(1).csv")
 
-    for file in possible_files:
-        if Path(file).exists():
-            df = pd.read_csv(file)
-            return df
-
-    st.error(
-        "Dataset file not found. Please upload the CSV file to the same GitHub folder as this Python file."
-    )
-    st.stop()
-
-
+# Converts Placed and Unplaced to Pass and fail
 def clean_pass_fail_labels(df):
-    """
-    Converts the original placement_status column into clearer labels:
-    Placed = Passed
-    Not Placed = Failed
-    """
     df = df.copy()
-
-    if "placement_status" in df.columns:
-        df["pass_fail"] = df["placement_status"].replace({
-            "Placed": "Passed",
-            "Not Placed": "Failed",
-            "placed": "Passed",
-            "not placed": "Failed",
-            "Not placed": "Failed"
-        })
-    else:
-        # Backup logic: if placement_status is missing, create pass/fail based on exam score.
-        df["pass_fail"] = np.where(df["exam_score"] >= 70, "Passed", "Failed")
-
+    df["pass_fail"] = df["placement_status"].map({
+        "Placed": "Passed",
+        "Not Placed": "Failed"
+    })
     return df
 
 
 def add_pass_line(ax):
-    """
-    Adds a horizontal line showing the passing threshold.
-    """
     ax.axhline(70, linestyle="--", linewidth=1.5)
-    ax.text(
-        ax.get_xlim()[0],
-        71,
-        "Passing line: 70",
-        fontsize=10,
-        va="bottom"
-    )
-
 
 def scatter_chart(df, x_col, x_label, title, explanation):
     """
@@ -226,9 +182,6 @@ ax.set_ylabel("Number of Students")
 ax.set_title("Distribution of Exam Scores")
 st.pyplot(fig)
 
-st.info(
-    "Narrative point: Students do not perform equally. The dashboard therefore investigates which behaviors are associated with higher scores."
-)
 
 st.markdown("---")
 
@@ -277,9 +230,8 @@ scatter_chart(
     "This chart checks whether higher internet usage is associated with lower or higher performance."
 )
 
-st.info(
-    "Narrative point: These scatterplots are more useful than simple pass/fail boxplots because they show the relationship between behavior and score while still identifying passed and failed students."
-)
+
+
 
 st.markdown("---")
 
